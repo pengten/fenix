@@ -146,7 +146,7 @@ public class FenixJpaQuery extends AbstractJpaQuery {
 
         // 循环设置命名绑定参数，且如果分页对象不为空，就设置分页参数.
         sqlInfo.getParams().forEach(query::setParameter);
-        if (pageable != null) {
+        if (pageable != null && pageable.isPaged()) {
             query.setFirstResult((int) pageable.getOffset());
             query.setMaxResults(pageable.getPageSize());
         }
@@ -158,7 +158,7 @@ public class FenixJpaQuery extends AbstractJpaQuery {
         }
 
         // 如果分页参数为空，说明不需要再做分页查询，须要从 ThreadLocal 中移除当前线程中的 fenixQueryInfo 信息.
-        if (pageable == null) {
+        if (pageable == null || pageable.isUnpaged()) {
             fenixQueryInfo.remove();
         }
         return query;
@@ -378,6 +378,7 @@ public class FenixJpaQuery extends AbstractJpaQuery {
 
     /**
      * 通过QueryInfo获取CountSql.
+     *
      * @param fenixQueryInfo {@link FenixQueryInfo}
      * @return countSql
      */
@@ -394,7 +395,7 @@ public class FenixJpaQuery extends AbstractJpaQuery {
         if (!matcher.find()) {
             return countSql;
         }
-        String distinctColumn = matcher.group(4).replaceAll(REGX_SQL_ALIAS,"");
+        String distinctColumn = matcher.group(4).replaceAll(REGX_SQL_ALIAS, "");
         return countSql.replaceFirst("count\\(\\*\\)", String.format("count(distinct %s)", distinctColumn));
     }
 
